@@ -9,18 +9,53 @@ def pdf_to_txt(pdf_path, txt_path):
         text = ''
         for page_num in range(len(pdf_reader.pages)):
             page = pdf_reader.pages[page_num]
+            cropbox = page.cropbox
+            cropbox.lower_left = (cropbox.lower_left[0], cropbox.lower_left[1] + 100)
+            cropbox.upper_right = (cropbox.upper_right[0], cropbox.upper_right[1] - 100)
+            page.cropbox = cropbox
             text += page.extract_text()
 
         try:
-            text = re.split("Literaturverzeichnis", text, flags=re.IGNORECASE)
-            if len(text) != 3:
-                print("NOT LEN 3  ", pdf_path)
+            if text.count("Abbildungsverzeichnis") >= 2:
+                text1 = re.split("Abbildungsverzeichnis", text, flags=re.IGNORECASE)
+                text1 = text1[1:len(text1) - 1]
+                text1 = " ".join(text1)
 
-            text = text[1]
+            if text.count("Algorithmen") >= 2:
+                text1 = re.split("Algorithmen", text, flags=re.IGNORECASE)
+                text1 = text1[1:len(text1) - 1]
+                text1 = " ".join(text1)
+
+            if text.count("Anhang") >= 2:
+                text1 = re.split("Anhang", text, flags=re.IGNORECASE)
+                text1 = text1[1:len(text1) - 1]
+                text1 = " ".join(text1)
+
+            elif text.count("Literaturverzeichnis") >= 2:
+                text1 = re.split("Literaturverzeichnis", text, flags=re.IGNORECASE)
+                text1 = text1[1:len(text1) - 1]
+                text1 = " ".join(text1)
+
+            elif text.count("Literatur") >= 2:
+                text1 = re.split("Literatur", text, flags=re.IGNORECASE)
+                text1 = text1[1:len(text1)-1]
+                text1 = " ".join(text1)
+
+            elif "Einleitung" in text:
+                text1 = re.split("Einleitung", text, flags=re.IGNORECASE)[1]
+                text1 = re.split("Literaturnachweis", text, flags=re.IGNORECASE)[0]
+
+            elif "Einführung" in text:
+                text1 = re.split("Einleitung", text, flags=re.IGNORECASE)[1]
+                text1 = re.split("Literatur", text, flags=re.IGNORECASE)[0]
+
+            else:
+                text1 = text
         except:
             print("EXCEPT   ", pdf_path)
+
         with open(txt_path, 'w', encoding='utf-8') as txt_file:
-            txt_file.write(text)
+            txt_file.write(text1)
 
 # Example usage:
 pdf_folder = "C:/Users/Admin/PycharmProjects/Leitlinien_scraper/pdf_files"
@@ -31,10 +66,6 @@ for filename in tqdm(os.listdir(pdf_folder)):
     if filename.endswith('.pdf'):
         if "Diabetes" in filename:
             if "abgelaufen" not in filename and "ungueltig" not in filename:
-                try:
                     pdf_path = os.path.join(pdf_folder, filename)
                     txt_path = txt_folder + "/" + filename.replace(".pdf", ".txt")
                     pdf_to_txt(pdf_path, txt_path)
-                    print(txt_path)
-                except:
-                    print(filename)
